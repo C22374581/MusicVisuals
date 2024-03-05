@@ -5,11 +5,24 @@ import ie.tudublin.VisualException;
 
 public class Project extends Visual {
 
+
+    
         // Terrain dimensions
     int cols, rows;
     int scl = 20; // Scale of each cell in the terrain
     float[][] terrain;
     float terrainOffset = 0;
+    float camX = 0;
+    float camY = -200;
+    float camZ = 500;
+    float rotX = PI / 3;
+    float zoom = -500;
+    boolean moveLeft = false;
+    boolean moveRight = false;
+    boolean moveUp = false;
+    boolean moveDown = false;
+    boolean zoomIn = false;
+    boolean zoomOut = false;
 
 
 
@@ -20,15 +33,30 @@ public class Project extends Visual {
         //fullScreen(P3D, SPAN);
     }
 
-    public void keyPressed()
-    {
-        if (key == ' ')
-        {
-            getAudioPlayer().cue(0);
-            getAudioPlayer().play();
-            
+    public void keyPressed() {
+        if (key == CODED) {
+            if (keyCode == UP) moveUp = true;
+            if (keyCode == DOWN) moveDown = true;
+            if (keyCode == LEFT) moveLeft = true;
+            if (keyCode == RIGHT) moveRight = true;
+        } else if (key == '=') {
+            zoomIn = true;
+        } else if (key == '-') {
+            zoomOut = true;
         }
- 
+    }
+    
+    public void keyReleased() {
+        if (key == CODED) {
+            if (keyCode == UP) moveUp = false;
+            if (keyCode == DOWN) moveDown = false;
+            if (keyCode == LEFT) moveLeft = false;
+            if (keyCode == RIGHT) moveRight = false;
+        } else if (key == '=') {
+            zoomIn = false;
+        } else if (key == '-') {
+            zoomOut = false;
+        }
     }
 
     public void setup()
@@ -69,6 +97,21 @@ public class Project extends Visual {
             e.printStackTrace();
         }
         calculateFrequencyBands();
+        float rotationSpeed = (float) 0.01;
+        float zoomSpeed = 5;
+
+        if (moveUp) rotX -= rotationSpeed;
+        if (moveDown) rotX += rotationSpeed;
+        if (moveLeft) camX -= zoomSpeed;
+        if (moveRight) camX += zoomSpeed;
+        if (zoomIn) zoom += zoomSpeed;
+        if (zoomOut) zoom -= zoomSpeed;
+
+    // Camera setup
+    translate(width / 2 + camX, height / 2 + camY, zoom);
+    rotateX(rotX);
+    translate(-width / 2, -height * 0.6f);
+
     
         float amplitude = getSmoothedAmplitude(); // Get the current amplitude
     
