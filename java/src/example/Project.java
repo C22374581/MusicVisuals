@@ -4,10 +4,8 @@ import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
 
 public class Project extends Visual {
-
-
     
-        // Terrain dimensions
+    // Terrain dimensions
     int cols, rows;
     int scl = 20; // Scale of each cell in the terrain
     float[][] terrain;
@@ -24,13 +22,10 @@ public class Project extends Visual {
     boolean zoomIn = false;
     boolean zoomOut = false;
 
-
-
-    public void settings()
-    {
+    public void settings() {
         size(800, 800, P3D);
         println("CWD: " + System.getProperty("user.dir"));
-        //fullScreen(P3D, SPAN);
+        // fullScreen(P3D, SPAN);
     }
 
     public void keyPressed() {
@@ -45,7 +40,7 @@ public class Project extends Visual {
             zoomOut = true;
         }
     }
-    
+
     public void keyReleased() {
         if (key == CODED) {
             if (keyCode == UP) moveUp = false;
@@ -59,37 +54,26 @@ public class Project extends Visual {
         }
     }
 
-    public void setup()
-    {
+    public void setup() {
         colorMode(HSB);
         noCursor();
-        
+
         setFrameSize(256);
 
         startMinim();
         loadAudio("Kodak.mp3");
         getAudioPlayer().play();
-        //startListening(); 
+        // startListening(); 
         size(800, 800, P3D);
         scl = 20; // Smaller values mean more detail
         cols = (width / scl) * 2; // Extend beyond screen width
         rows = (height / scl) * 2; // Extend beyond screen height
         terrain = new float[cols][rows];
-    
-
-
-        
     }
-
-    float radius = 200;
-
-    float smoothedBoxSize = 0;
-
-    float rot = 0;
 
     public void draw() {
         background(0);
-        lights(); // Add some basic lighting
+        directionalLight(255, 255, 255, 1, 0, -1); // Adjusted light direction
         calculateAverageAmplitude();
         try {
             calculateFFT();
@@ -99,55 +83,51 @@ public class Project extends Visual {
         calculateFrequencyBands();
         float rotationSpeed = (float) 0.01;
         float zoomSpeed = 5;
-
+    
         if (moveUp) rotX -= rotationSpeed;
         if (moveDown) rotX += rotationSpeed;
         if (moveLeft) camX -= zoomSpeed;
         if (moveRight) camX += zoomSpeed;
         if (zoomIn) zoom += zoomSpeed;
         if (zoomOut) zoom -= zoomSpeed;
-
-    // Camera setup
-    translate(width / 2 + camX, height / 2 + camY, zoom);
-    rotateX(rotX);
-    translate(-width / 2, -height * 0.6f);
-
     
-        float amplitude = getSmoothedAmplitude(); // Get the current amplitude
+        // Camera setup
+        translate(width / 2 + camX, height / 2 + camY, zoom);
+        rotateX(rotX);
+        translate(-width / 2, -height / 2);
     
-        // Adjust camera to ensure the terrain is centered and fully visible
-        translate(width / 2, height / 2, -500); // Adjust Z based on terrain size
-        rotateX(PI / 3);
-        // Centering the terrain: Adjust based on actual terrain dimensions
-        translate(-cols * scl / 2, -rows * scl / 2 + 100, 0); // Adjust Y offset to center, may need tweaking
+        float amplitude = getSmoothedAmplitude(); // Ensure this is not always zero
     
-        // Dynamic offset for terrain to create slower movement
-        terrainOffset += 0.025; // Slower movement
-    
-        // Generate terrain elevations based on noise, scaled by amplitude
+        // Generate terrain
         float yOffset = terrainOffset;
         for (int y = 0; y < rows; y++) {
             float xOffset = 0;
             for (int x = 0; x < cols; x++) {
-                terrain[x][y] = map(noise(xOffset, yOffset), 0, 1, -200 * amplitude, 200 * amplitude);
-                xOffset += 0.1; // Adjust for desired detail level
+                terrain[x][y] = map(noise(xOffset, yOffset), 0, 1, -100, 100);
+                xOffset += 0.1;
             }
             yOffset += 0.1;
         }
     
-        // Draw the terrain with adjusted stroke for visibility
-        noFill();
-        strokeWeight(1); // Optional: adjust stroke weight for better visibility
+        // Draw the terrain
+        translate(0, height / 2, -200);
         for (int y = 0; y < rows - 1; y++) {
             beginShape(TRIANGLE_STRIP);
             for (int x = 0; x < cols; x++) {
-                stroke(255 * amplitude, 255, 255); // Color changes with amplitude
-                vertex(x * scl, y * scl, terrain[x][y]);
+                float elevation = terrain[x][y];
+                float peakThreshold = -50 + 250 * amplitude;
+                if (elevation > peakThreshold) {
+                    stroke(255, 0, 0); // Red for peaks
+                } else {
+                    stroke(255); // White for the rest
+                }
+                vertex(x * scl, y * scl, elevation);
                 vertex(x * scl, (y + 1) * scl, terrain[x][y + 1]);
             }
             endShape();
         }
+    
+        terrainOffset += 0.05; // Move the terrain over time
     }
     
-}
-    
+}    
