@@ -4,7 +4,6 @@ import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
 
 public class Project extends Visual {
-    
     // Terrain dimensions
     int cols, rows;
     int scl = 20; // Scale of each cell in the terrain
@@ -28,6 +27,7 @@ public class Project extends Visual {
         // fullScreen(P3D, SPAN);
     }
 
+    // Handle key press events
     public void keyPressed() {
         if (key == CODED) {
             if (keyCode == UP) moveUp = true;
@@ -41,6 +41,7 @@ public class Project extends Visual {
         }
     }
 
+    // Handle key release events
     public void keyReleased() {
         if (key == CODED) {
             if (keyCode == UP) moveUp = false;
@@ -54,6 +55,7 @@ public class Project extends Visual {
         }
     }
 
+    // Setup the terrain and audio
     public void setup() {
         colorMode(HSB);
         noCursor();
@@ -71,6 +73,7 @@ public class Project extends Visual {
         terrain = new float[cols][rows];
     }
 
+    // Draw the terrain
     public void draw() {
         background(0);
         directionalLight(255, 255, 255, 1, 0, -1); // Adjusted light direction
@@ -128,6 +131,5 @@ public class Project extends Visual {
         }
     
         terrainOffset += 0.05; // Move the terrain over time
-    }
-    
+    }    
 }    
