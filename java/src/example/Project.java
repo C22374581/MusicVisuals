@@ -13,7 +13,7 @@ public class Project extends Visual {
     int scl = 20; // Scale of each cell in the terrain
     float[][] terrain;
     float terrainOffset = 0;
-    float camX = 0;
+    float camX = 500;
     float camY = -200;
     float camZ = 500;
     float rotX = PI / 3;
@@ -24,6 +24,23 @@ public class Project extends Visual {
     boolean moveDown = false;
     boolean zoomIn = false;
     boolean zoomOut = false;
+
+
+    // Limits for camera movement
+final float MAX_CAM_X = 350;
+final float MIN_CAM_X = 100;
+final float MAX_CAM_Y = 100;
+final float MIN_CAM_Y = -500;
+final float MAX_ZOOM = 100;
+final float MIN_ZOOM = -1000;
+
+// Limits for rotation
+final float MAX_ROT_X = PI / 2;
+final float MIN_ROT_X = 0;
+
+
+
+
 
     public void settings() {
         size(800, 800, P3D);
@@ -96,18 +113,18 @@ ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
             drop.update();
             drop.display();
         }
-        float rotationSpeed = (float) 0.01;
+        float rotationSpeed = 0.01f;
         float zoomSpeed = 5;
-    
-        if (moveUp) rotX -= rotationSpeed;
-        if (moveDown) rotX += rotationSpeed;
-        if (moveLeft) camX -= zoomSpeed;
-        if (moveRight) camX += zoomSpeed;
-        if (zoomIn) zoom += zoomSpeed;
-        if (zoomOut) zoom -= zoomSpeed;
-    
+        
+        if (moveUp && rotX > MIN_ROT_X) rotX -= rotationSpeed;
+        if (moveDown && rotX < MAX_ROT_X) rotX += rotationSpeed;
+        if (moveLeft && camX > MIN_CAM_X) camX -= zoomSpeed;
+        if (moveRight && camX < MAX_CAM_X) camX += zoomSpeed;
+        if (zoomIn && zoom < MAX_ZOOM) zoom += zoomSpeed;
+        if (zoomOut && zoom > MIN_ZOOM) zoom -= zoomSpeed;
+        
         // Camera setup
-        translate(width / 2 + camX, height / 2 + camY, zoom);
+        translate(width / 2 + camX - (cols * scl) / 2, height / 2 + camY, zoom);
         rotateX(rotX);
         translate(-width / 2, -height / 2);
     
@@ -115,7 +132,7 @@ ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
     
         // Generate terrain
         float yOffset = terrainOffset;
-        for (int y = 0; y < rows; y++) {
+        for (int y = 0; y < rows - 1; y++) {
             float xOffset = 0;
             for (int x = 0; x < cols; x++) {
                 terrain[x][y] = map(noise(xOffset, yOffset), 0, 1, -100, 100);
