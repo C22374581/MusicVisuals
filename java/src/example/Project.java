@@ -1,48 +1,31 @@
 package example;
 
 import java.util.ArrayList;
-
 import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
 
-
-
 public class Project extends Visual {
-    // Terrain dimensions
     int cols, rows;
-    int scl = 20; // Scale of each cell in the terrain
-    float[][] terrain;
+    int scl = 20; // Scale for each cell
+    float[][] terrain; // Terrain height map
     float terrainOffset = 0;
-    float camX = 500;
-    float camY = -200;
-    float camZ = 500;
+    float camX = 500, camY = -200, camZ = 500;
     float rotX = PI / 3;
     float zoom = -500;
-    boolean moveLeft = false;
-    boolean moveRight = false;
-    boolean moveUp = false;
-    boolean moveDown = false;
-    boolean zoomIn = false;
-    boolean zoomOut = false;
-    boolean isPaused = false; // Track whether the program is paused
-    float modStrength = 20; // Strength of the modulation effect
+    boolean moveLeft = false, moveRight = false, moveUp = false, moveDown = false, zoomIn = false, zoomOut = false;
+    boolean isPaused = false;
+    float modStrength = 20; // Earthquake modulation strength
+    boolean regenerateTerrain = true;
+    int earthquakeEffectDuration = 0;
+    final int earthquakePauseDuration = 30;
+    boolean isEarthquakeActive = false; // Flag for earthquake activity
 
+    final float MAX_CAM_X = 800, MIN_CAM_X = 200, MAX_CAM_Y = 100, MIN_CAM_Y = -500;
+    final float MAX_ZOOM = 100, MIN_ZOOM = -1000;
+    final float MAX_ROT_X = PI / 2, MIN_ROT_X = 0;
+    
 
-    // Limits for camera movement
-final float MAX_CAM_X = 800;
-final float MIN_CAM_X = 200;
-final float MAX_CAM_Y = 100;
-final float MIN_CAM_Y = -500;
-final float MAX_ZOOM = 100;
-final float MIN_ZOOM = -1000;
-
-// Limits for rotation
-final float MAX_ROT_X = PI / 2;
-final float MIN_ROT_X = 0;
-
-
-
-
+    ArrayList<Raindrop> raindrops;
 
     public void settings() {
         size(800, 800, P3D);
@@ -50,167 +33,187 @@ final float MIN_ROT_X = 0;
         // fullScreen(P3D, SPAN);
     }
 
-    // Handle key press events
-  
     public void keyPressed() {
-        if (key == ' ') { // Check if the spacebar is pressed
-            isPaused = !isPaused; // Toggle pause state
-        } else if (key == CODED) {
-            if (keyCode == UP) moveUp = true;
-            if (keyCode == DOWN) moveDown = true;
-            if (keyCode == LEFT) moveLeft = true;
-            if (keyCode == RIGHT) moveRight = true;
-        } else if (key == '=') {
-            zoomIn = true;
-        } else if (key == '-') {
-            zoomOut = true;
+        if (key == CODED) {
+            switch (keyCode) {
+                case UP:
+                    moveUp = true;
+                    break;
+                case DOWN:
+                    moveDown = true;
+                    break;
+                case LEFT:
+                    moveLeft = true;
+                    break;
+                case RIGHT:
+                    moveRight = true;
+                    break;
+            }
+        } else {
+            switch (key) {
+                case ' ':
+                    isPaused = !isPaused;
+                    if (isPaused) {
+                        noLoop();
+                    } else {
+                        loop();
+                    }
+                    break;
+                case '=':
+                    zoomIn = true;
+                    break;
+                case '-':
+                    zoomOut = true;
+                    break;
+                case 'E':
+                case 'e':
+                    System.out.println("E key pressed. mouseX: " + mouseX + ", mouseY: " + mouseY + ", modStrength: " + modStrength);
+                    earthquake(mouseX, mouseY, modStrength);
+                    break;
+            }
         }
     }
-
-    // Handle key release events
+    
     public void keyReleased() {
         if (key == CODED) {
-            if (keyCode == UP) moveUp = false;
-            if (keyCode == DOWN) moveDown = false;
-            if (keyCode == LEFT) moveLeft = false;
-            if (keyCode == RIGHT) moveRight = false;
-        } else if (key == '=') {
-            zoomIn = false;
-        } else if (key == '-') {
-            zoomOut = false;
+            switch (keyCode) {
+                case UP:
+                    moveUp = false;
+                    break;
+                case DOWN:
+                    moveDown = false;
+                    break;
+                case LEFT:
+                    moveLeft = false;
+                    break;
+                case RIGHT:
+                    moveRight = false;
+                    break;
+            }
+        } else {
+            // Since zoomIn and zoomOut are toggled on key press, no need to toggle them off on key release for '=' and '-'
         }
     }
-
-    public void mouseMoved() {
-        // Define the area of the screen where the terrain is drawn
-        float terrainWidthRatio = 0.8f; // Replace with actual ratio
-        float terrainHeightRatio = 0.8f; // Replace with actual ratio
     
-        int terrainStartX = (int) ((1 - terrainWidthRatio) / 2 * width);
-        int terrainEndX = (int) ((1 + terrainWidthRatio) / 2 * width);
-        int terrainStartY = (int) ((1 - terrainHeightRatio) / 2 * height);
-        int terrainEndY = (int) ((1 + terrainHeightRatio) / 2 * height);
-    
-        // Check if the mouse is within the terrain area
-        if (mouseX >= terrainStartX && mouseX <= terrainEndX && mouseY >= terrainStartY && mouseY <= terrainEndY) {
-            camX = map(mouseX, terrainStartX, terrainEndX, MIN_CAM_X, MAX_CAM_X);
-            camY = map(mouseY, terrainStartY, terrainEndY, MIN_CAM_Y, MAX_CAM_Y);
-        }
+    public void pause() {
+        if (isPaused) noLoop();
+        else loop();
     }
 
-
-    ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
-    
-        // Method to modify the terrain based on mouse position
-    void modifyTerrain(int mouseX, int mouseY, float strength) {
-    // Calculate the terrain grid position corresponding to the mouse position
-    int gridX = (int)((mouseX - width / 2 - camX + (cols * scl) / 2) / scl);
-    int gridY = (int)((mouseY - height / 2) / scl);
-    
-    // Check if the calculated position is within the bounds of the terrain array
-    if (gridX >= 0 && gridX < cols && gridY >= 0 && gridY < rows) {
-        // Modify the terrain elevation at the calculated position
-        // Use a simple modification for demonstration: raise/lower by a fixed amount
-        terrain[gridX][gridY] += strength;
-        // Prevent the terrain from going below a certain threshold, if necessary
-        // terrain[gridX][gridY] = max(terrain[gridX][gridY], minHeight);
-    }
-}
-    // Setup the terrain and audio
     public void setup() {
         colorMode(HSB);
-        
-
         setFrameSize(256);
-
         startMinim();
         loadAudio("Kodak.mp3");
         getAudioPlayer().play();
-        // startListening(); 
-        size(800, 800, P3D);
-        raindrops = new ArrayList<Raindrop>(); // Initialize the ArrayList
-        for (int i = 0; i < 500; i++) { // Create 500 raindrops as an example
-            raindrops.add(new Raindrop(this));
-        }
-        scl = 20; // Smaller values mean more detail
-        cols = (width / scl) * 3; // Extend beyond screen width
-        rows = (height / scl) * 3; // Extend beyond screen height
+        raindrops = new ArrayList<Raindrop>();
+        for (int i = 0; i < 500; i++) raindrops.add(new Raindrop(this));
+        scl = 20;
+        cols = (width / scl) * 3;
+        rows = (height / scl) * 3;
         terrain = new float[cols][rows];
     }
 
-    // Draw the terrain
+    public void generateTerrain() {
+        if (regenerateTerrain) {
+            float yOffset = terrainOffset;
+            for (int y = 0; y < rows - 1; y++) {
+                float xOffset = 0;
+                for (int x = 0; x < cols; x++) {
+                    terrain[x][y] = map(noise(xOffset, yOffset), 0, 1, -100, 100);
+                    xOffset += 0.1;
+                }
+                yOffset += 0.1;
+            }
+        }
+    }
+
     public void draw() {
-        if (isPaused) {
-            return; // Skip the rest of the draw() function
-        }
-        background(0);
-        directionalLight(255, 255, 255, 1, 0, -1); // Adjusted light direction
-        calculateAverageAmplitude();
-        try {
-            calculateFFT();
-        } catch(VisualException e) {
-            e.printStackTrace();
-        }
-        calculateFrequencyBands();
+        if (isPaused) return;
+        background(0); // Clear the screen with a black background
+        directionalLight(255, 255, 255, 1, 0, -1); // Add a directional light from the left
+        calculateAverageAmplitude(); // Calculate the average amplitude
+        try { 
+            calculateFFT(); 
+        } catch(VisualException e) { 
+            e.printStackTrace(); 
+        } // Calculate the FFT
+        calculateFrequencyBands(); // Calculate the frequency bands
+        
         for (Raindrop drop : raindrops) {
-            drop.update();
-            drop.display();
+            drop.update(); drop.display(); // Update and display each raindrop
         }
-        float rotationSpeed = 0.01f;
-        float zoomSpeed = 5;
-        
-        if (moveUp && rotX > MIN_ROT_X) rotX -= rotationSpeed;
-        if (moveDown && rotX < MAX_ROT_X) rotX += rotationSpeed;
-        if (moveLeft && camX > MIN_CAM_X) camX -= zoomSpeed;
-        if (moveRight && camX < MAX_CAM_X) camX += zoomSpeed;
-        if (zoomIn && zoom < MAX_ZOOM) zoom += zoomSpeed;
-        if (zoomOut && zoom > MIN_ZOOM) zoom -= zoomSpeed;
-        
-        // Camera setup
+    
+        // Camera and view adjustments based on key inputs
+        float movementSpeed = 2; // Adjust this value as needed for movement sensitivity
+        float zoomSpeed = 20; // Adjust for zoom sensitivity
+        if (moveUp) camY += movementSpeed;
+        if (moveDown) camY -= movementSpeed;
+        if (moveLeft) camX += movementSpeed;
+        if (moveRight) camX -= movementSpeed;
+        if (zoomIn) zoom += zoomSpeed;
+        if (zoomOut) zoom -= zoomSpeed;
+    
+        // Apply translations and rotations based on camera position and viewing angle
         translate(width / 2 + camX - (cols * scl) / 2, height / 2 + camY, zoom);
         rotateX(rotX);
-        translate(-width / 2, -height / 2);
     
-        float amplitude = getSmoothedAmplitude(); // Ensure this is not always zero
+        // Now draw your terrain and other elements here
+        float amplitude = getSmoothedAmplitude(); // This should adjust terrain or other visuals based on the audio amplitude
+        generateTerrain(); // Only regenerate terrain if necessary, respecting the earthquake effect
     
-        // Generate terrain
-        float yOffset = terrainOffset;
-        for (int y = 0; y < rows - 1; y++) {
-            float xOffset = 0;
-            for (int x = 0; x < cols; x++) {
-                terrain[x][y] = map(noise(xOffset, yOffset), 0, 1, -100, 100);
-                xOffset += 0.1;
+        // Drawing the terrain with respect to the newly updated camera position
+        translate(0, height / 2, -200); // Adjusting the terrain drawing position
+        drawTerrain(amplitude); // Method call to draw the terrain
+    
+        // Earthquake effect duration handling
+        if (earthquakeEffectDuration > 0) {
+            earthquakeEffectDuration--; // Decrement the earthquake effect duration
+            if (earthquakeEffectDuration <= 0) {
+                regenerateTerrain = true; // Allow terrain regeneration after earthquake effects
             }
-            yOffset += 0.1;
         }
     
-        // Draw the terrain
-        translate(0, height / 2, -200);
+        terrainOffset += 0.05; // Increment the terrain offset for continuous terrain movement effect
+    }
+    
+
+    void drawTerrain(float amplitude) {
         for (int y = 0; y < rows - 1; y++) {
-            beginShape(TRIANGLE_STRIP);
+            beginShape(TRIANGLE_STRIP); 
             for (int x = 0; x < cols; x++) {
                 float elevation = terrain[x][y];
                 float peakThreshold = -50 + 250 * amplitude;
-                if (elevation > peakThreshold) {
-                    stroke(255, 0, 0); // Red for peaks
-                } else {
-                    stroke(255); // White for the rest
-                }
+                stroke(elevation > peakThreshold ? color(255, 0, 0) : color(255));
                 vertex(x * scl, y * scl, elevation);
                 vertex(x * scl, (y + 1) * scl, terrain[x][y + 1]);
             }
             endShape();
         }
-        
-        terrainOffset += 0.05; // Move the terrain over time
     }
-    
-    public void mousePressed() {
-        modifyTerrain(mouseX, mouseY, modStrength);
+
+    public void earthquake(int mouseX, int mouseY, float strength) {
+        isEarthquakeActive = true;
+        regenerateTerrain = false;
+        earthquakeEffectDuration = earthquakePauseDuration;
+
+        int gridX = (int)((mouseX - width / 2 - camX + (cols * scl) / 2) / scl);
+        int gridY = (int)((mouseY - height / 2) / scl);
+        for (int x = max(0, gridX - 10); x < min(cols, gridX + 10); x++) {
+            for (int y = max(0, gridY - 10); y < min(rows, gridY + 10); y++) {
+                terrain[x][y] -= strength;
+            }
+        }
+
+        isEarthquakeActive = false;
     }
 
     public void mouseDragged() {
         modifyTerrain(mouseX, mouseY, modStrength);
     }
 
+    public void modifyTerrain(int x, int y, float strength) {
+    
+     
+    }
 }
