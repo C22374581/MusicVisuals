@@ -92,6 +92,10 @@ ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
             e.printStackTrace();
         }
         calculateFrequencyBands();
+        for (Raindrop drop : raindrops) {
+            drop.update();
+            drop.display();
+        }
         float rotationSpeed = (float) 0.01;
         float zoomSpeed = 5;
     
@@ -140,10 +144,7 @@ ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
     
         terrainOffset += 0.05; // Move the terrain over time
 
-        for (Raindrop drop : raindrops) {
-            drop.update();
-            drop.display();
-        }
+        
 
     }    
 }
