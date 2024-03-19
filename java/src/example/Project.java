@@ -1,7 +1,11 @@
 package example;
 
+import java.util.ArrayList;
+
 import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
+
+
 
 public class Project extends Visual {
     // Terrain dimensions
@@ -54,7 +58,7 @@ public class Project extends Visual {
             zoomOut = false;
         }
     }
-
+ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
     // Setup the terrain and audio
     public void setup() {
         colorMode(HSB);
@@ -67,6 +71,10 @@ public class Project extends Visual {
         getAudioPlayer().play();
         // startListening(); 
         size(800, 800, P3D);
+        raindrops = new ArrayList<Raindrop>(); // Initialize the ArrayList
+        for (int i = 0; i < 500; i++) { // Create 500 raindrops as an example
+            raindrops.add(new Raindrop(this));
+        }
         scl = 20; // Smaller values mean more detail
         cols = (width / scl) * 2; // Extend beyond screen width
         rows = (height / scl) * 2; // Extend beyond screen height
@@ -131,5 +139,12 @@ public class Project extends Visual {
         }
     
         terrainOffset += 0.05; // Move the terrain over time
+
+        for (Raindrop drop : raindrops) {
+            drop.update();
+            drop.display();
+        }
+
     }    
-}    
+}
+
