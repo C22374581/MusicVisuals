@@ -24,11 +24,12 @@ public class Project extends Visual {
     boolean moveDown = false;
     boolean zoomIn = false;
     boolean zoomOut = false;
+    boolean isPaused = false; // Track whether the program is paused
 
 
     // Limits for camera movement
-final float MAX_CAM_X = 350;
-final float MIN_CAM_X = 100;
+final float MAX_CAM_X = 800;
+final float MIN_CAM_X = 200;
 final float MAX_CAM_Y = 100;
 final float MIN_CAM_Y = -500;
 final float MAX_ZOOM = 100;
@@ -49,8 +50,11 @@ final float MIN_ROT_X = 0;
     }
 
     // Handle key press events
+  
     public void keyPressed() {
-        if (key == CODED) {
+        if (key == ' ') { // Check if the spacebar is pressed
+            isPaused = !isPaused; // Toggle pause state
+        } else if (key == CODED) {
             if (keyCode == UP) moveUp = true;
             if (keyCode == DOWN) moveDown = true;
             if (keyCode == LEFT) moveLeft = true;
@@ -93,13 +97,16 @@ ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
             raindrops.add(new Raindrop(this));
         }
         scl = 20; // Smaller values mean more detail
-        cols = (width / scl) * 2; // Extend beyond screen width
-        rows = (height / scl) * 2; // Extend beyond screen height
+        cols = (width / scl) * 3; // Extend beyond screen width
+        rows = (height / scl) * 3; // Extend beyond screen height
         terrain = new float[cols][rows];
     }
 
     // Draw the terrain
     public void draw() {
+        if (isPaused) {
+            return; // Skip the rest of the draw() function
+        }
         background(0);
         directionalLight(255, 255, 255, 1, 0, -1); // Adjusted light direction
         calculateAverageAmplitude();
