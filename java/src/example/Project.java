@@ -25,6 +25,7 @@ public class Project extends Visual {
     boolean zoomIn = false;
     boolean zoomOut = false;
     boolean isPaused = false; // Track whether the program is paused
+    float modStrength = 20; // Strength of the modulation effect
 
 
     // Limits for camera movement
@@ -79,11 +80,46 @@ final float MIN_ROT_X = 0;
             zoomOut = false;
         }
     }
-ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
+
+    public void mouseMoved() {
+        // Define the area of the screen where the terrain is drawn
+        float terrainWidthRatio = 0.8f; // Replace with actual ratio
+        float terrainHeightRatio = 0.8f; // Replace with actual ratio
+    
+        int terrainStartX = (int) ((1 - terrainWidthRatio) / 2 * width);
+        int terrainEndX = (int) ((1 + terrainWidthRatio) / 2 * width);
+        int terrainStartY = (int) ((1 - terrainHeightRatio) / 2 * height);
+        int terrainEndY = (int) ((1 + terrainHeightRatio) / 2 * height);
+    
+        // Check if the mouse is within the terrain area
+        if (mouseX >= terrainStartX && mouseX <= terrainEndX && mouseY >= terrainStartY && mouseY <= terrainEndY) {
+            camX = map(mouseX, terrainStartX, terrainEndX, MIN_CAM_X, MAX_CAM_X);
+            camY = map(mouseY, terrainStartY, terrainEndY, MIN_CAM_Y, MAX_CAM_Y);
+        }
+    }
+
+
+    ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
+    
+        // Method to modify the terrain based on mouse position
+    void modifyTerrain(int mouseX, int mouseY, float strength) {
+    // Calculate the terrain grid position corresponding to the mouse position
+    int gridX = (int)((mouseX - width / 2 - camX + (cols * scl) / 2) / scl);
+    int gridY = (int)((mouseY - height / 2) / scl);
+    
+    // Check if the calculated position is within the bounds of the terrain array
+    if (gridX >= 0 && gridX < cols && gridY >= 0 && gridY < rows) {
+        // Modify the terrain elevation at the calculated position
+        // Use a simple modification for demonstration: raise/lower by a fixed amount
+        terrain[gridX][gridY] += strength;
+        // Prevent the terrain from going below a certain threshold, if necessary
+        // terrain[gridX][gridY] = max(terrain[gridX][gridY], minHeight);
+    }
+}
     // Setup the terrain and audio
     public void setup() {
         colorMode(HSB);
-        noCursor();
+        
 
         setFrameSize(256);
 
@@ -165,11 +201,16 @@ ArrayList<Raindrop> raindrops; // Declare the collection of Raindrop objects
             }
             endShape();
         }
-    
-        terrainOffset += 0.05; // Move the terrain over time
-
         
+        terrainOffset += 0.05; // Move the terrain over time
+    }
+    
+    public void mousePressed() {
+        modifyTerrain(mouseX, mouseY, modStrength);
+    }
 
-    }    
+    public void mouseDragged() {
+        modifyTerrain(mouseX, mouseY, modStrength);
+    }
+
 }
-
