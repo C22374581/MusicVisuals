@@ -24,14 +24,28 @@ public class Project extends Visual {
     final float MAX_ZOOM = 100, MIN_ZOOM = -1000;
     final float MAX_ROT_X = PI / 2, MIN_ROT_X = 0;
     
-
     ArrayList<Raindrop> raindrops;
+    ArrayList<Snowflake> snowflakes;
+    Thunderstorm thunderstorm;
+    String currentWeather = "bloodmoon"; // Default weather condition
+
 
     public void settings() {
         size(800, 800, P3D);
         println("CWD: " + System.getProperty("user.dir"));
         // fullScreen(P3D, SPAN);
+
+        // Initialize weather systems
+        raindrops = new ArrayList<Raindrop>();
+        snowflakes = new ArrayList<Snowflake>();
+        thunderstorm = new Thunderstorm(this); //  use Processing methods inside the Thunderstorm class
+
+        for (int i = 0; i < 500; i++) {
+            raindrops.add(new Raindrop(this));
+            snowflakes.add(new Snowflake(this));
+        }
     }
+    
 
     public void keyPressed() {
         if (key == CODED) {
@@ -70,9 +84,26 @@ public class Project extends Visual {
                     System.out.println("E key pressed. mouseX: " + mouseX + ", mouseY: " + mouseY + ", modStrength: " + modStrength);
                     earthquake(mouseX, mouseY, modStrength);
                     break;
+                case 'r': // Rain
+                    currentWeather = "rain";
+                    break;
+                case 'f': // Fog
+                    currentWeather = "fog";
+                    break;
+                case 's': // Snow
+                    currentWeather = "snow";
+                    break;
+                case 't': // Thunderstorm
+                    currentWeather = "thunderstorm";
+                    break;
+                case 'C':
+                case 'c': // Reset to default state, which is the blood moon
+                    currentWeather = "bloodMoon";
+                    break;
             }
         }
     }
+    
     
     public void keyReleased() {
         if (key == CODED) {
@@ -130,18 +161,49 @@ public class Project extends Visual {
 
     public void draw() {
         if (isPaused) return;
-        background(0); // Clear the screen with a black background
         directionalLight(255, 255, 255, 1, 0, -1); // Add a directional light from the left
+        if (currentWeather.equals("bloodMoon")) {
+            background(255, 0, 0); // Set the background to red during a blood moon
+        } else {
+            background(0); // Otherwise, clear the screen with a black background
+        }
         calculateAverageAmplitude(); // Calculate the average amplitude
-        try { 
-            calculateFFT(); 
-        } catch(VisualException e) { 
-            e.printStackTrace(); 
+        try {
+            calculateFFT();
+        } catch(VisualException e) {
+            e.printStackTrace();
         } // Calculate the FFT
         calculateFrequencyBands(); // Calculate the frequency bands
-        
-        for (Raindrop drop : raindrops) {
-            drop.update(); drop.display(); // Update and display each raindrop
+    
+        // Weather system rendering based on currentWeather state
+        switch (currentWeather) {
+            case "rain":
+                for (Raindrop drop : raindrops) {
+                    drop.update();
+                    drop.display();
+                }
+                break;
+            case "fog":
+                drawFog(); // Assuming drawFog() is implemented elsewhere
+                break;
+            case "snow":
+                for (Snowflake flake : snowflakes) {
+                    flake.update();
+                    flake.display();
+                }
+                break;
+            case "thunderstorm":
+                thunderstorm.update();
+                thunderstorm.display();
+                // Optionally, render raindrops during the thunderstorm
+                for (Raindrop drop : raindrops) {
+                    drop.update();
+                    drop.display();
+                }
+                break;
+            case "bloodMoon":
+                drawBloodMoon();
+                break;
         }
     
         // Camera and view adjustments based on key inputs
@@ -161,11 +223,12 @@ public class Project extends Visual {
         // Now draw your terrain and other elements here
         float amplitude = getSmoothedAmplitude(); // This should adjust terrain or other visuals based on the audio amplitude
         generateTerrain(); // Only regenerate terrain if necessary, respecting the earthquake effect
-    
+        drawTerrain(amplitude); // Draw the terrain with respect to the audio amplitude
+
         // Drawing the terrain with respect to the newly updated camera position
         translate(0, height / 2, -200); // Adjusting the terrain drawing position
         drawTerrain(amplitude); // Method call to draw the terrain
-    
+        
         // Earthquake effect duration handling
         if (earthquakeEffectDuration > 0) {
             earthquakeEffectDuration--; // Decrement the earthquake effect duration
@@ -175,6 +238,8 @@ public class Project extends Visual {
         }
     
         terrainOffset += 0.05; // Increment the terrain offset for continuous terrain movement effect
+
+        drawTerrain(getSmoothedAmplitude()); 
     }
     
 
@@ -190,6 +255,18 @@ public class Project extends Visual {
             }
             endShape();
         }
+    }
+
+    void drawBloodMoon() {
+        // Calculate the moon's position to ensure it's in the top right corner
+        float moonDiameter = 150;
+        float moonX = width - moonDiameter / 2; // Right corner, minus half the moon's diameter
+        float moonY = moonDiameter / 2; // Top part of the screen, plus half the moon's diameter
+    
+        fill(255, 0, 0); // Red for the blood moon
+        ellipse(moonX, moonY, moonDiameter, moonDiameter); // Draw the moon
+    
+        fill(255); // Reset the fill color to white
     }
 
     public void earthquake(int mouseX, int mouseY, float strength) {
@@ -216,4 +293,15 @@ public class Project extends Visual {
     
      
     }
+    void drawFog() {
+        // Cover the entire screen with a semi-transparent grey overlay
+        // Adjust the alpha value (here set to 150) to make the fog denser or lighter
+        fill(185, 185, 185, 185); // Semi-transparent grey
+        noStroke();
+        rect(0, 0, width, height);
+    }
+    
+    
+    
+    
 }
