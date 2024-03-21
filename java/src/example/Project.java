@@ -81,7 +81,7 @@ public class Project extends Visual {
                     break;
                 case 'E':
                 case 'e':
-                    System.out.println("E key pressed. mouseX: " + mouseX + ", mouseY: " + mouseY + ", modStrength: " + modStrength);
+                    //System.out.println("E key pressed. mouseX: " + mouseX + ", mouseY: " + mouseY + ", modStrength: " + modStrength);
                     earthquake(mouseX, mouseY, modStrength);
                     break;
                 case 'r': // Rain
@@ -93,8 +93,9 @@ public class Project extends Visual {
                 case 's': // Snow
                     currentWeather = "snow";
                     break;
-                case 't': // Thunderstorm
+                    case 't': // Thunderstorm
                     currentWeather = "thunderstorm";
+                    loadThunderstruckSong(); // Load the thunderstruck song
                     break;
                 case 'C':
                 case 'c': // Reset to default state, which is the blood moon
@@ -159,6 +160,10 @@ public class Project extends Visual {
         }
     }
 
+    int getSongPosition() {
+        return getAudioPlayer().position();
+    }
+
     public void draw() {
         if (isPaused) return;
         directionalLight(255, 255, 255, 1, 0, -1); // Add a directional light from the left
@@ -193,14 +198,15 @@ public class Project extends Visual {
                 }
                 break;
             case "thunderstorm":
-                thunderstorm.update();
+                int songPosition = getSongPosition(); // Fetch the current song position
+                thunderstorm.update(songPosition); // Update thunderstorm with the current song position
                 thunderstorm.display();
-                // Optionally, render raindrops during the thunderstorm
                 for (Raindrop drop : raindrops) {
                     drop.update();
                     drop.display();
                 }
                 break;
+
             case "bloodMoon":
                 drawBloodMoon();
                 break;
@@ -301,6 +307,14 @@ public class Project extends Visual {
         rect(0, 0, width, height);
     }
     
+    void loadThunderstruckSong() {
+        // Ensure there's an audio player available
+        if (getAudioPlayer() != null) {
+            getAudioPlayer().close(); // Close the current audio player to free resources
+        }
+        loadAudio("ThunderStruck.mp3"); // Load the "thunderstruck.mp3" file
+        getAudioPlayer().play(); // Play the new song
+    }
     
     
     
