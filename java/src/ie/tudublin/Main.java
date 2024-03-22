@@ -2,6 +2,7 @@ package ie.tudublin;
 
 
 import example.Project;
+import example.RotatingAudioBands;
 
 
 public class Main {

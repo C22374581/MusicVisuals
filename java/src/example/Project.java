@@ -9,9 +9,9 @@ public class Project extends Visual {
     int scl = 20; // Scale for each cell
     float[][] terrain; // Terrain height map
     float terrainOffset = 0;
-    float camX = 500, camY = -200, camZ = 500;
+    float camX = 0, camY = -750, camZ = 500;
     float rotX = PI / 3;
-    float zoom = -500;
+    float zoom = -1260;
     boolean moveLeft = false, moveRight = false, moveUp = false, moveDown = false, zoomIn = false, zoomOut = false;
     boolean isPaused = false;
     float modStrength = 20; // Earthquake modulation strength
@@ -86,6 +86,7 @@ public class Project extends Visual {
                     break;
                 case 'r': // Rain
                     currentWeather = "rain";
+                    loadRainSong();
                     break;
                 case 'f': // Fog
                     currentWeather = "fog";
@@ -141,30 +142,34 @@ public class Project extends Visual {
         raindrops = new ArrayList<Raindrop>();
         for (int i = 0; i < 500; i++) raindrops.add(new Raindrop(this));
         scl = 20;
-        cols = (width / scl) * 3;
-        rows = (height / scl) * 3;
+        cols = (int) ((width / scl) * 1.5);
+        rows = (int) ((height / scl) * 1.5);
         terrain = new float[cols][rows];
     }
 
-    public void generateTerrain() {
-        if (regenerateTerrain) {
-            float yOffset = terrainOffset;
-            for (int y = 0; y < rows - 1; y++) {
-                float xOffset = 0;
-                for (int x = 0; x < cols; x++) {
-                    terrain[x][y] = map(noise(xOffset, yOffset), 0, 1, -100, 100);
-                    xOffset += 0.1;
-                }
-                yOffset += 0.1;
-            }
+// Updated to accept amplitude as an argument
+void generateTerrain(float amplitude) {
+    float yOffset = terrainOffset;
+    for (int y = 0; y < rows; y++) {
+        float xOffset = 0;
+        for (int x = 0; x < cols; x++) {
+            // Modulate the height based on noise and amplitude
+            float elevation = map(noise(xOffset, yOffset), 0, 1, -100 * amplitude, 100 * amplitude);
+            terrain[x][y] = elevation;
+            xOffset += 0.1; // Fine-grained noise for more detailed terrain
         }
+        yOffset += 0.1;
     }
+}
+
 
     int getSongPosition() {
         return getAudioPlayer().position();
     }
 
     public void draw() {
+
+
         if (isPaused) return;
         directionalLight(255, 255, 255, 1, 0, -1); // Add a directional light from the left
         if (currentWeather.equals("bloodMoon")) {
@@ -222,18 +227,22 @@ public class Project extends Visual {
         if (zoomIn) zoom += zoomSpeed;
         if (zoomOut) zoom -= zoomSpeed;
     
-        // Apply translations and rotations based on camera position and viewing angle
+        // Calculate smoothed amplitude for terrain modulation
+        float amplitude = getSmoothedAmplitude() * 5; // Amplify the amplitude
+        amplitude = constrain(amplitude, 0, 1); // Constrain to [0, 1] range
+        
+        // Apply camera transformations
         translate(width / 2 + camX - (cols * scl) / 2, height / 2 + camY, zoom);
         rotateX(rotX);
-    
-        // Now draw your terrain and other elements here
-        float amplitude = getSmoothedAmplitude(); // This should adjust terrain or other visuals based on the audio amplitude
-        generateTerrain(); // Only regenerate terrain if necessary, respecting the earthquake effect
-        drawTerrain(amplitude); // Draw the terrain with respect to the audio amplitude
+        
+        // Terrain offset moves faster with amplitude changes
+        terrainOffset += 0.05 + amplitude * 0.5;
 
-        // Drawing the terrain with respect to the newly updated camera position
-        translate(0, height / 2, -200); // Adjusting the terrain drawing position
-        drawTerrain(amplitude); // Method call to draw the terrain
+        // Generate the terrain with modulation based on the amplitude
+        generateTerrain(amplitude);
+        
+        // Draw the modulated terrain
+        drawTerrain(amplitude);
         
         // Earthquake effect duration handling
         if (earthquakeEffectDuration > 0) {
@@ -243,25 +252,26 @@ public class Project extends Visual {
             }
         }
     
-        terrainOffset += 0.05; // Increment the terrain offset for continuous terrain movement effect
+        terrainOffset += 0.001; // Increment the terrain offset for continuous terrain movement effect
 
-        drawTerrain(getSmoothedAmplitude()); 
     }
     
-
     void drawTerrain(float amplitude) {
+        // Visualize the terrain
         for (int y = 0; y < rows - 1; y++) {
-            beginShape(TRIANGLE_STRIP); 
+            beginShape(TRIANGLE_STRIP);
             for (int x = 0; x < cols; x++) {
-                float elevation = terrain[x][y];
-                float peakThreshold = -50 + 250 * amplitude;
-                stroke(elevation > peakThreshold ? color(255, 0, 0) : color(255));
+                float baseElevation = terrain[x][y];
+                float elevation = baseElevation + amplitude * 200; // Modulate elevation with amplitude
+                stroke(255 * amplitude, 255, 255 - 200 * amplitude);
+                fill(0); // You can remove this if you don't want the terrain filled
                 vertex(x * scl, y * scl, elevation);
                 vertex(x * scl, (y + 1) * scl, terrain[x][y + 1]);
             }
             endShape();
         }
     }
+
 
     void drawBloodMoon() {
         // Calculate the moon's position to ensure it's in the top right corner
@@ -313,6 +323,16 @@ public class Project extends Visual {
             getAudioPlayer().close(); // Close the current audio player to free resources
         }
         loadAudio("ThunderStruck.mp3"); // Load the "thunderstruck.mp3" file
+        getAudioPlayer().play(); // Play the new song
+    }
+
+
+    void loadRainSong() {
+        // Ensure there's an audio player available
+        if (getAudioPlayer() != null) {
+            getAudioPlayer().close(); // Close the current audio player to free resources
+        }
+        loadAudio("rain.mp3"); // Load the "rain.mp3" file
         getAudioPlayer().play(); // Play the new song
     }
     
