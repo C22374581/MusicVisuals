@@ -154,6 +154,69 @@ public class Project extends Visual {
 
     }
 
+    void drawClover(float x, float y, float size) {
+        fill(0, 128, 0); // Green color for clover
+        noStroke();
+        for (int i = 0; i < 4; i++) {
+            pushMatrix();
+            translate(x, y);
+            rotate(PI / 2 * i);
+            // Draw heart shapes for each leaf of the clover
+            beginShape();
+            vertex(0, -size/4);
+            bezierVertex(-size/4, -size/2, -size/2, -size/4, 0, size/4);
+            bezierVertex(size/2, -size/4, size/4, -size/2, 0, -size/4);
+            endShape(CLOSE);
+            popMatrix();
+        }
+        // Draw stem
+        stroke(0, 128, 0); // Green color for the stem
+        strokeWeight(2);
+        line(x, y + size/4, x, y + size);
+    }
+    
+    
+    void drawCelticCross(float x, float y, float size) {
+        fill(218, 165, 32); // Golden color for the cross
+        noStroke();
+        // Vertical part of the cross
+        rect(x - size/8, y - size/2, size/4, size);
+        // Horizontal part of the cross
+        rect(x - size/2, y - size/8, size, size/4);
+        // Circle at the center
+        ellipse(x, y, size/2, size/2);
+    }
+    
+    
+    void drawLandscape() {
+        // Gradient sky from light blue to darker
+        for (int i = 0; i < height / 2; i++) {
+            float inter = map(i, 0, height / 2, 0, 1);
+            int c = lerpColor(color(135, 206, 235), color(25, 25, 112), inter);
+            stroke(c);
+            line(0, i, width, i);
+        }
+        
+        // Green hills
+        fill(34, 139, 34); // Use a green color for the hills
+        noStroke();
+        // Ensure all arguments are float by casting calculations to float where needed
+        arc(width / 2, height, (float)(width * 1.2), (float)(height * 0.8), PI, TWO_PI);
+        arc(width / 4, height, (float)(width * 0.6), (float)(height * 0.5), PI, TWO_PI);
+        arc(width * 3 / 4, height, (float)(width * 0.6), (float)(height * 0.5), PI, TWO_PI);
+    }
+    
+    
+    void drawIrishTheme() {
+        float musicAmplitude = getSmoothedAmplitude(); // Assume this is implemented
+        float size = musicAmplitude * 100; // Example scaling based on music
+        
+        drawLandscape(); // Background landscape
+        drawClover(100, height - 100, size); // Example placement
+        drawCelticCross(width - 100, height - 100, size); // Example placement
+    }
+    
+
 // Updated to accept amplitude as an argument
 void generateTerrain(float amplitude) {
     float yOffset = terrainOffset;
@@ -203,6 +266,7 @@ void generateTerrain(float amplitude) {
             case "fog":
             // Draw elements that should appear behind the fog:
             drawParticles();  // This would be a new method that contains the particle drawing logic.
+            drawIrishTheme(); // This would be a new method that contains the Irish theme drawing logic.
             drawTerrain(amplitude);
 
             // Now draw the fog over everything:
