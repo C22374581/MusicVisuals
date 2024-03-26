@@ -26,6 +26,7 @@ public class Project extends Visual {
     
     ArrayList<Raindrop> raindrops;
     ArrayList<Snowflake> snowflakes;
+    ArrayList<Particle> particles;
     Thunderstorm thunderstorm;
     String currentWeather = "bloodmoon"; // Default weather condition
 
@@ -81,7 +82,6 @@ public class Project extends Visual {
                     break;
                 case 'E':
                 case 'e':
-                    //System.out.println("E key pressed. mouseX: " + mouseX + ", mouseY: " + mouseY + ", modStrength: " + modStrength);
                     earthquake(mouseX, mouseY, modStrength);
                     break;
                 case 'r': // Rain
@@ -90,13 +90,14 @@ public class Project extends Visual {
                     break;
                 case 'f': // Fog
                     currentWeather = "fog";
+                    loadFogSong(); // Method to load and play fog.mp3
                     break;
                 case 's': // Snow
                     currentWeather = "snow";
                     break;
-                    case 't': // Thunderstorm
+                case 't': // Thunderstorm
                     currentWeather = "thunderstorm";
-                    loadThunderstruckSong(); // Load the thunderstruck song
+                    loadThunderstruckSong();
                     break;
                 case 'C':
                 case 'c': // Reset to default state, which is the blood moon
@@ -105,6 +106,7 @@ public class Project extends Visual {
             }
         }
     }
+    
     
     
     public void keyReleased() {
@@ -145,6 +147,11 @@ public class Project extends Visual {
         cols = (int) ((width / scl) * 1.5);
         rows = (int) ((height / scl) * 1.5);
         terrain = new float[cols][rows];
+        particles = new ArrayList<Particle>();
+        for (int i = 0; i < 100; i++) { // Start with 100 particles
+            particles.add(new Particle(this));
+        }
+
     }
 
 // Updated to accept amplitude as an argument
@@ -194,8 +201,14 @@ void generateTerrain(float amplitude) {
                 }
                 break;
             case "fog":
-                drawFog(); // Assuming drawFog() is implemented elsewhere
-                break;
+            // Draw elements that should appear behind the fog:
+            drawParticles();  // This would be a new method that contains the particle drawing logic.
+            drawTerrain(amplitude);
+
+            // Now draw the fog over everything:
+            drawFog();
+            break;   
+                
             case "snow":
                 for (Snowflake flake : snowflakes) {
                     flake.update();
@@ -254,6 +267,19 @@ void generateTerrain(float amplitude) {
     
         terrainOffset += 0.001; // Increment the terrain offset for continuous terrain movement effect
 
+        // Update and display particles
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            p.update();
+            p.display(this);
+            if (p.isDead()) {
+                particles.remove(i);
+                particles.add(new Particle(this)); // Replace dead particle with a new one
+                drawFog(); // Draw fog when a particle dies
+            }
+}
+
+
     }
     
     void drawTerrain(float amplitude) {
@@ -309,13 +335,13 @@ void generateTerrain(float amplitude) {
     
      
     }
+    
     void drawFog() {
-        // Cover the entire screen with a semi-transparent grey overlay
-        // Adjust the alpha value (here set to 150) to make the fog denser or lighter
-        fill(185, 185, 185, 185); // Semi-transparent grey
+        fill(255, 255, 255, 100); // White fog with partial transparency
         noStroke();
         rect(0, 0, width, height);
     }
+    
     
     void loadThunderstruckSong() {
         // Ensure there's an audio player available
@@ -334,6 +360,28 @@ void generateTerrain(float amplitude) {
         }
         loadAudio("rain.mp3"); // Load the "rain.mp3" file
         getAudioPlayer().play(); // Play the new song
+    }
+
+    void loadFogSong() {
+        if (getAudioPlayer() != null) {
+            getAudioPlayer().close(); // Close the current audio player to free resources
+        }
+        loadAudio("fog.mp3"); // Load the "fog.mp3" file
+        getAudioPlayer().play(); // Play the fog song
+    }
+    
+
+    void drawParticles() {
+        // Update and display particles
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            p.update();
+            p.display(this);
+            if (p.isDead()) {
+                particles.remove(i);
+                particles.add(new Particle(this)); // Replace dead particle with a new one
+            }
+        }
     }
     
     
