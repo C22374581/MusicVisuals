@@ -1,9 +1,11 @@
 package example;
-
+import ddf.minim.*;
 import processing.core.PApplet;
 
 public class Project2 extends PApplet {
-
+    float speed; // declare speed at class level
+    Minim minim;
+    AudioPlayer song;
     Particle[] swarm;
     int size_swarm = 20000;
 
@@ -12,6 +14,9 @@ public class Project2 extends PApplet {
     }
 
     public void setup(){
+        minim = new Minim(this);
+        song = minim.loadFile("rain.mp3");
+        song.play();
         colorMode(HSB, 360, 100, 100); // colorMode can now be called safely
         swarm = new Particle[size_swarm];
         for (int i = 0; i < size_swarm; i++) {
@@ -22,6 +27,9 @@ public class Project2 extends PApplet {
     }
 
     public void draw() {
+      if (song != null && song.isPlaying()) {
+        speed = map(song.mix.level(), 0, 1, 0, 2);
+    }
         fill(0,mouseY*(100.0f/height));
         rect(0,0,width,height);
         for (int i = 0; i < size_swarm; i++) {
@@ -33,7 +41,7 @@ public class Project2 extends PApplet {
           }
         }                 
     }
-    float speed = 0.5f;
+
     class Particle {
         float x,y;
         int c; // Use Processing's color type, not java.awt.Color
