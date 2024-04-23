@@ -22,11 +22,15 @@ public class Project2 extends PApplet {
     }
 
     public void draw() {
-        background(0);
-        for (Particle particle : swarm) {
-            particle.update();
-            particle.display();
-        }        
+        fill(0,10);
+        for (int i = 0; i < size_swarm; i++) {
+          swarm[i].update();
+        }
+        for (int i = 0; i < size_swarm; i++) {
+          if((i % (mouseX+1)) == 0) {
+          swarm[i].display();
+          }
+        }                 
     }
     float speed = 2.0f;
     class Particle {
@@ -53,7 +57,7 @@ public class Project2 extends PApplet {
         }
         
         void display(){
-            fill(c);
+            fill(c);  
             circle(x,y,4);
         }
     }
