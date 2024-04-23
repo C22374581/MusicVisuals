@@ -94,6 +94,7 @@ public class Project extends Visual {
                     break;
                 case 's': // Snow
                     currentWeather = "snow";
+                    loadSnowSong();
                     break;
                 case 't': // Thunderstorm
                     currentWeather = "thunderstorm";
@@ -415,6 +416,15 @@ void generateTerrain(float amplitude) {
         loadAudio("ThunderStruck.mp3"); // Load the "thunderstruck.mp3" file
         getAudioPlayer().play(); // Play the new song
     }
+    void loadSnowSong() {
+        // Ensure there's an audio player available
+        if (getAudioPlayer() != null) {
+            getAudioPlayer().close(); // Close the current audio player to free resources
+        }
+        loadAudio("snow.mp3"); // Load the "thunderstruck.mp3" file
+        getAudioPlayer().play(); // Play the new song
+    }
+
 
 
     void loadRainSong() {
