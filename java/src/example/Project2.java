@@ -28,7 +28,7 @@ public class Project2 extends PApplet {
             particle.display();
         }        
     }
-
+    float speed = 2.0f;
     class Particle {
         float x,y;
         int c; // Use Processing's color type, not java.awt.Color
@@ -37,15 +37,19 @@ public class Project2 extends PApplet {
         Particle(int i){
             x = random(width);
             y = random(height);
-            c = color(random(360), 100, 100); // Using HSB color mode
+            c = color(random(0,50), 100, 100); // Using HSB color mode
             angle =  i * (2*PI)/size_swarm;
-            y = (float) (height*0.5 + height*0.4*sin(angle));
+            y = (float) (height*0.5 + height*0.4*sin(20*angle));
             x = (float) (width*0.5 + (y-(0.1*height))*0.3 *cos(61 * angle));
             
         }
 
         void update(){
             // Update properties if necessary
+            angle += speed * (2*PI)/size_swarm;
+            c= color ((hue(c)+1) % 360, 100, 100);
+            y = (float) (height*0.5 + height*0.4*sin(20*angle));
+            x = (float) (width*0.5 + (y-(0.1*height))*0.3 *cos(61 * angle));
         }
         
         void display(){
