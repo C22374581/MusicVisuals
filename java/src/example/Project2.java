@@ -33,7 +33,7 @@ public class Project2 extends PApplet {
           }
         }                 
     }
-    float speed = 2.0f;
+    float speed = 0.5f;
     class Particle {
         float x,y;
         int c; // Use Processing's color type, not java.awt.Color
