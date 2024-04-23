@@ -26,6 +26,7 @@ public class Project extends Visual {
     
     ArrayList<Raindrop> raindrops;
     ArrayList<Snowflake> snowflakes;
+    ArrayList<Particle> particles;
     Thunderstorm thunderstorm;
     String currentWeather = "bloodmoon"; // Default weather condition
 
@@ -81,7 +82,6 @@ public class Project extends Visual {
                     break;
                 case 'E':
                 case 'e':
-                    //System.out.println("E key pressed. mouseX: " + mouseX + ", mouseY: " + mouseY + ", modStrength: " + modStrength);
                     earthquake(mouseX, mouseY, modStrength);
                     break;
                 case 'r': // Rain
@@ -90,13 +90,14 @@ public class Project extends Visual {
                     break;
                 case 'f': // Fog
                     currentWeather = "fog";
+                    loadFogSong(); // Method to load and play fog.mp3
                     break;
                 case 's': // Snow
                     currentWeather = "snow";
                     break;
-                    case 't': // Thunderstorm
+                case 't': // Thunderstorm
                     currentWeather = "thunderstorm";
-                    loadThunderstruckSong(); // Load the thunderstruck song
+                    loadThunderstruckSong();
                     break;
                 case 'C':
                 case 'c': // Reset to default state, which is the blood moon
@@ -105,6 +106,7 @@ public class Project extends Visual {
             }
         }
     }
+    
     
     
     public void keyReleased() {
@@ -145,7 +147,75 @@ public class Project extends Visual {
         cols = (int) ((width / scl) * 1.5);
         rows = (int) ((height / scl) * 1.5);
         terrain = new float[cols][rows];
+        particles = new ArrayList<Particle>();
+        for (int i = 0; i < 100; i++) { // Start with 100 particles
+            particles.add(new Particle(this));
+        }
+
     }
+
+    void drawClover(float x, float y, float size) {
+        fill(0, 128, 0); // Green color for clover
+        noStroke();
+        for (int i = 0; i < 4; i++) {
+            pushMatrix();
+            translate(x, y);
+            rotate(PI / 2 * i);
+            // Draw heart shapes for each leaf of the clover
+            beginShape();
+            vertex(0, -size/4);
+            bezierVertex(-size/4, -size/2, -size/2, -size/4, 0, size/4);
+            bezierVertex(size/2, -size/4, size/4, -size/2, 0, -size/4);
+            endShape(CLOSE);
+            popMatrix();
+        }
+        // Draw stem
+        stroke(0, 128, 0); // Green color for the stem
+        strokeWeight(2);
+        line(x, y + size/4, x, y + size);
+    }
+    
+    
+    void drawCelticCross(float x, float y, float size) {
+        fill(218, 165, 32); // Golden color for the cross
+        noStroke();
+        // Vertical part of the cross
+        rect(x - size/8, y - size/2, size/4, size);
+        // Horizontal part of the cross
+        rect(x - size/2, y - size/8, size, size/4);
+        // Circle at the center
+        ellipse(x, y, size/2, size/2);
+    }
+    
+    
+    void drawLandscape() {
+        // Gradient sky from light blue to darker
+        for (int i = 0; i < height / 2; i++) {
+            float inter = map(i, 0, height / 2, 0, 1);
+            int c = lerpColor(color(135, 206, 235), color(25, 25, 112), inter);
+            stroke(c);
+            line(0, i, width, i);
+        }
+        
+        // Green hills
+        fill(34, 139, 34); // Use a green color for the hills
+        noStroke();
+        // Ensure all arguments are float by casting calculations to float where needed
+        arc(width / 2, height, (float)(width * 1.2), (float)(height * 0.8), PI, TWO_PI);
+        arc(width / 4, height, (float)(width * 0.6), (float)(height * 0.5), PI, TWO_PI);
+        arc(width * 3 / 4, height, (float)(width * 0.6), (float)(height * 0.5), PI, TWO_PI);
+    }
+    
+    
+    void drawIrishTheme() {
+        float musicAmplitude = getSmoothedAmplitude(); // Assume this is implemented
+        float size = musicAmplitude * 100; // Example scaling based on music
+        
+        drawLandscape(); // Background landscape
+        drawClover(100, height - 100, size); // Example placement
+        drawCelticCross(width - 100, height - 100, size); // Example placement
+    }
+    
 
 // Updated to accept amplitude as an argument
 void generateTerrain(float amplitude) {
@@ -194,8 +264,15 @@ void generateTerrain(float amplitude) {
                 }
                 break;
             case "fog":
-                drawFog(); // Assuming drawFog() is implemented elsewhere
-                break;
+            // Draw elements that should appear behind the fog:
+            drawParticles();  // This would be a new method that contains the particle drawing logic.
+            drawIrishTheme(); // This would be a new method that contains the Irish theme drawing logic.
+            drawTerrain(amplitude);
+
+            // Now draw the fog over everything:
+            drawFog();
+            break;   
+                
             case "snow":
                 for (Snowflake flake : snowflakes) {
                     flake.update();
@@ -254,6 +331,19 @@ void generateTerrain(float amplitude) {
     
         terrainOffset += 0.001; // Increment the terrain offset for continuous terrain movement effect
 
+        // Update and display particles
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            p.update();
+            p.display(this);
+            if (p.isDead()) {
+                particles.remove(i);
+                particles.add(new Particle(this)); // Replace dead particle with a new one
+                drawFog(); // Draw fog when a particle dies
+            }
+}
+
+
     }
     
     void drawTerrain(float amplitude) {
@@ -309,13 +399,13 @@ void generateTerrain(float amplitude) {
     
      
     }
+    
     void drawFog() {
-        // Cover the entire screen with a semi-transparent grey overlay
-        // Adjust the alpha value (here set to 150) to make the fog denser or lighter
-        fill(185, 185, 185, 185); // Semi-transparent grey
+        fill(255, 255, 255, 100); // White fog with partial transparency
         noStroke();
         rect(0, 0, width, height);
     }
+    
     
     void loadThunderstruckSong() {
         // Ensure there's an audio player available
@@ -334,6 +424,28 @@ void generateTerrain(float amplitude) {
         }
         loadAudio("rain.mp3"); // Load the "rain.mp3" file
         getAudioPlayer().play(); // Play the new song
+    }
+
+    void loadFogSong() {
+        if (getAudioPlayer() != null) {
+            getAudioPlayer().close(); // Close the current audio player to free resources
+        }
+        loadAudio("fog.mp3"); // Load the "fog.mp3" file
+        getAudioPlayer().play(); // Play the fog song
+    }
+    
+
+    void drawParticles() {
+        // Update and display particles
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            p.update();
+            p.display(this);
+            if (p.isDead()) {
+                particles.remove(i);
+                particles.add(new Particle(this)); // Replace dead particle with a new one
+            }
+        }
     }
     
     
