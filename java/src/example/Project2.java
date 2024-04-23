@@ -5,7 +5,7 @@ import processing.core.PApplet;
 public class Project2 extends PApplet {
 
     Particle[] swarm;
-    int size_swarm = 2000;
+    int size_swarm = 20000;
 
     public void settings() {
         size(800, 950, P3D); // Call size here, but not colorMode
@@ -22,7 +22,8 @@ public class Project2 extends PApplet {
     }
 
     public void draw() {
-        fill(0,10);
+        fill(0,mouseY*(100.0f/height));
+        rect(0,0,width,height);
         for (int i = 0; i < size_swarm; i++) {
           swarm[i].update();
         }
@@ -43,7 +44,7 @@ public class Project2 extends PApplet {
             y = random(height);
             c = color(random(0,50), 100, 100); // Using HSB color mode
             angle =  i * (2*PI)/size_swarm;
-            y = (float) (height*0.5 + height*0.4*sin(20*angle));
+            y = (float) (height*0.5 + height*0.4*sin(40*angle));
             x = (float) (width*0.5 + (y-(0.1*height))*0.3 *cos(61 * angle));
             
         }
