@@ -5,6 +5,13 @@ import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
 
 public class Project extends Visual {
+    float[] coswave;
+    int shapeIndex = 0;
+    int[] colors = { // Array of colors to interpolate between
+      color(255, 0, 0), // Red
+      color(0, 255, 0), // Green
+      color(0, 0, 255)  // Blue
+    };
     int cols, rows;
     int scl = 20; // Scale for each cell
     float[][] terrain; // Terrain height map
@@ -137,6 +144,12 @@ public class Project extends Visual {
     }
 
     public void setup() {
+        coswave = new float[width];
+        for (int i = 0; i < width; i++) {
+          float amount = map(i, 0, width, 0, PI);
+          coswave[i] = abs(cos(amount));
+        }
+    
         colorMode(HSB);
         setFrameSize(256);
         startMinim();
@@ -241,21 +254,16 @@ void generateTerrain(float amplitude) {
     public void draw() {
 
 
-        if (isPaused) return;
-        directionalLight(255, 255, 255, 1, 0, -1); // Add a directional light from the left
-        if (currentWeather.equals("bloodMoon")) {
-            background(255, 0, 0); // Set the background to red during a blood moon
-        } else {
-            background(0); // Otherwise, clear the screen with a black background
-        }
+
+        background(0); // Otherwise, clear the screen with a black background
         calculateAverageAmplitude(); // Calculate the average amplitude
         try {
             calculateFFT();
-        } catch(VisualException e) {
+        } catch (VisualException e) {
             e.printStackTrace();
-        } // Calculate the FFT
+        }
         calculateFrequencyBands(); // Calculate the frequency bands
-    
+        float amplitude = getSmoothedAmplitude() * 5; // Amplify the amplitude    
         // Weather system rendering based on currentWeather state
         switch (currentWeather) {
             case "rain":
@@ -263,22 +271,28 @@ void generateTerrain(float amplitude) {
                     drop.update();
                     drop.display();
                 }
+
+                amplitude = constrain(amplitude, 0, 1); // Constrain to [0, 1] range
+                translate(width / 2 + camX - (cols * scl) / 2, height / 2 + camY, zoom);
+                rotateX(rotX);
+                terrainOffset += 0.05 + amplitude * 0.5;
+                generateTerrain(amplitude);
+                drawTerrain(amplitude);
+                terrainOffset += 0.001;                
                 break;
             case "fog":
             // Draw elements that should appear behind the fog:
-            drawParticles();  // This would be a new method that contains the particle drawing logic.
-            drawIrishTheme(); // This would be a new method that contains the Irish theme drawing logic.
-            drawTerrain(amplitude);
-
-            // Now draw the fog over everything:
-            drawFog();
+            drawTerrain3(amplitude);
+            terrainOffset += 0.001;  
             break;   
                 
             case "snow":
                 for (Snowflake flake : snowflakes) {
                     flake.update();
-                    flake.display();
+                    flake.display();                  
                 }
+                drawTerrain2(amplitude);
+                terrainOffset += 0.001;  
                 break;
             case "thunderstorm":
                 int songPosition = getSongPosition(); // Fetch the current song position
@@ -287,11 +301,9 @@ void generateTerrain(float amplitude) {
                 for (Raindrop drop : raindrops) {
                     drop.update();
                     drop.display();
+                    drawTerrain4(amplitude);
+                    terrainOffset += 0.001;  
                 }
-                break;
-
-            case "bloodMoon":
-                drawBloodMoon();
                 break;
         }
     
@@ -305,22 +317,7 @@ void generateTerrain(float amplitude) {
         if (zoomIn) zoom += zoomSpeed;
         if (zoomOut) zoom -= zoomSpeed;
     
-        // Calculate smoothed amplitude for terrain modulation
-        float amplitude = getSmoothedAmplitude() * 5; // Amplify the amplitude
-        amplitude = constrain(amplitude, 0, 1); // Constrain to [0, 1] range
-        
-        // Apply camera transformations
-        translate(width / 2 + camX - (cols * scl) / 2, height / 2 + camY, zoom);
-        rotateX(rotX);
-        
-        // Terrain offset moves faster with amplitude changes
-        terrainOffset += 0.05 + amplitude * 0.5;
-
-        // Generate the terrain with modulation based on the amplitude
-        generateTerrain(amplitude);
-        
-        // Draw the modulated terrain
-        drawTerrain(amplitude);
+  // Increment the terrain offset for continuous terrain movement effect        
         
         // Earthquake effect duration handling
         if (earthquakeEffectDuration > 0) {
@@ -330,7 +327,7 @@ void generateTerrain(float amplitude) {
             }
         }
     
-        terrainOffset += 0.001; // Increment the terrain offset for continuous terrain movement effect
+
 
         // Update and display particles
         for (int i = particles.size() - 1; i >= 0; i--) {
@@ -364,17 +361,147 @@ void generateTerrain(float amplitude) {
     }
 
 
-    void drawBloodMoon() {
-        // Calculate the moon's position to ensure it's in the top right corner
-        float moonDiameter = 150;
-        float moonX = width - moonDiameter / 2; // Right corner, minus half the moon's diameter
-        float moonY = moonDiameter / 2; // Top part of the screen, plus half the moon's diameter
-    
-        fill(255, 0, 0); // Red for the blood moon
-        ellipse(moonX, moonY, moonDiameter, moonDiameter); // Draw the moon
-    
-        fill(255); // Reset the fill color to white
+
+// Declare a global variable to keep track of the rotation
+float accumulatedRotation = 0;
+
+void drawTerrain2(float amplitude) {
+    background(0);
+    translate(width / 2, height / 2, -500); // Center the scene, adjust z for better view
+
+    // Modulate light color and intensity based on amplitude
+    float lightIntensity = 100 + amplitude * 155;
+    pointLight(lightIntensity, lightIntensity * 0.66f, 0, 200, -150, 0); // Orange light, more intense with amplitude
+    directionalLight(0, 102 + amplitude * 153, 255, -1, 0, 0); // Blue light, brighter with amplitude
+
+    // Accumulate rotation for dynamic movement
+    accumulatedRotation += amplitude * PI / 10;
+
+    // Configure number of boxes and grid
+    int numBoxes = 30; // Total number of boxes
+    int gridWidth = 5; // Number of boxes along the width
+    int spacing = 300; // Space between each box
+
+    // Draw multiple boxes with vivid color changes
+    for (int i = 0; i < numBoxes; i++) {
+        pushMatrix();
+
+        // Calculate grid positions
+        float x = (i % gridWidth) * spacing - (gridWidth * spacing / 2);
+        float y = ((i / gridWidth) % gridWidth) * spacing - (gridWidth * spacing / 2);
+        float z = (i % 2) * spacing - spacing / 2;
+
+        translate(x, y, z);
+
+        // Apply the accumulated rotation
+        rotateY(accumulatedRotation);
+        rotateX(accumulatedRotation);
+
+        // Dynamic size and more random color alteration with amplitude
+        float boxSize = 100 + amplitude * 100; // More dramatic size changes
+
+        // Randomly change colors for a "crazy" effect
+        int r = (int)(random(255)); // Random red component
+        int g = (int)(random(255)); // Random green component
+        int b = (int)(random(255)); // Random blue component
+        fill(r, g, b); // Adjust color dynamically with completely random values
+
+        box(boxSize);
+
+        popMatrix();
+    }    
+}
+
+
+int numStars = 50; // Number of stars
+float startRadius = 300; // Initial radius of the circle
+
+void drawTerrain3(float amplitude) {
+  clear();
+  background(0);
+
+  // Calculate time-based rotation
+  float minTimeScale = (float) 0.001; // Minimum time scale
+  float maxTimeScale = (float) 1.0; // Maximum time scale
+  float timeScale = map(amplitude, 0, 1, minTimeScale, maxTimeScale); // Adjust the time scale based on amplitude
+  float time = (float) (millis() / 1000.0) * timeScale; // Convert milliseconds to seconds and scale by timeScale
+
+  // Draw shooting star effects in the background
+  drawShootingStars();
+
+  // Draw one big star in the middle
+  float middleSize = 50 + amplitude * 100; // Scale size based on amplitude
+  float middleX = width / 2;
+  float middleY = height / 2;
+  float middleColor = amplitude * 255; // Change color based on amplitude
+
+  strokeWeight(2);
+  stroke(middleColor);
+  fill(middleColor);
+  beginShape();
+  for (int i = 0; i < 10; i++) {
+    float angle = TWO_PI / 10 * i + time; // Add time-based rotation
+    float xOffset = cos(angle) * middleSize;
+    float yOffset = sin(angle) * middleSize;
+    if (i % 2 == 0) {
+      xOffset *= 0.5; // Make every other point closer to the center
+      yOffset *= 0.5; // Make every other point closer to the center
     }
+    vertex(middleX + xOffset, middleY + yOffset);
+  }
+  endShape(CLOSE);
+
+  // Iterate over each star position
+  for (int i = 0; i < numStars; i++) {
+    float angle = TWO_PI * i / numStars + time; // Calculate angle for this star
+    float radius = startRadius; // Distance from the center big star
+
+    // Scale size based on amplitude
+    float size = 10 + amplitude * 40;
+
+    // Generate random RGB values for the star's color
+    float r = random(256); // Random red component
+    float g = random(256); // Random green component
+    float b = random(256); // Random blue component
+
+    // Calculate the position of the star in a circular orbit
+    float x = middleX + cos(angle) * radius;
+    float y = middleY + sin(angle) * radius;
+
+    // Set stroke and fill colors using the random RGB values
+    strokeWeight(2);
+    stroke(r, g, b);
+    fill(r, g, b);
+
+    beginShape();
+    for (int j = 0; j < 10; j++) {
+      float angleOffset = TWO_PI / 10 * j;
+      float xOffset = cos(angleOffset) * size;
+      float yOffset = sin(angleOffset) * size;
+      if (j % 2 == 0) {
+        xOffset *= 0.5; // Make every other point closer to the center
+        yOffset *= 0.5; // Make every other point closer to the center
+      }
+      vertex(x + xOffset, y + yOffset);
+    }
+    endShape(CLOSE);
+  }
+}
+
+// Function to draw shooting star effects in the background
+void drawShootingStars() {
+  strokeWeight(1);
+  stroke(255, 255, 255, 200); // Semi-transparent white lines
+  for (int i = 0; i < 10; i++) { // Draw multiple shooting stars
+    float startX = random(width); // Random starting x-coordinate
+    float startY = random(height); // Random starting y-coordinate
+    float endX = startX - random(100, 200); // Random ending x-coordinate
+    float endY = startY + random(-20, 20); // Random ending y-coordinate with slight variation
+    line(startX, startY, endX, endY); // Draw the shooting star
+  }
+}
+
+
 
     public void earthquake(int mouseX, int mouseY, float strength) {
         isEarthquakeActive = true;
@@ -392,15 +519,8 @@ void generateTerrain(float amplitude) {
         isEarthquakeActive = false;
     }
 
-    public void mouseDragged() {
-        modifyTerrain(mouseX, mouseY, modStrength);
-    }
-
-    public void modifyTerrain(int x, int y, float strength) {
-    
-     
-    }
-    
+ 
+   
     void drawFog() {
         fill(255, 255, 255, 100); // White fog with partial transparency
         noStroke();
