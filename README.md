@@ -86,12 +86,17 @@ public void render()
 ```
 
 This is an image using a relative URL:
+![image](https://github.com/C22374581/MusicVisuals/assets/124157320/c600c05f-0a22-4ef9-a3b4-0fee44da28b0)
 
-![An image](images/p8.png)
 
 This is an image using an absolute URL:
 
-![A different image](https://bryanduggandotorg.files.wordpress.com/2019/02/infinite-forms-00045.png?w=595&h=&zoom=2)
+![image](https://github.com/C22374581/MusicVisuals/assets/124157320/fc9a7da4-55dd-45b4-b007-eef5acbf8620)
+
+
+This is an image using a relative URL:
+![image](https://github.com/C22374581/MusicVisuals/assets/124157320/075d4ec7-a305-48f1-980b-43a12f1baa3e)
+
 
 This is a youtube video:
 
