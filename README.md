@@ -61,29 +61,96 @@ This is a [hyperlink](http://bryanduggan.org)
 
 This is code:
 
-```Java
-public void render()
-{
-	ui.noFill();
-	ui.stroke(255);
-	ui.rect(x, y, width, height);
-	ui.textAlign(PApplet.CENTER, PApplet.CENTER);
-	ui.text(text, x + width * 0.5f, y + height * 0.5f);
-}
-```
+package example;
 
-So is this without specifying the language:
+import processing.core.PApplet;
+import java.util.ArrayList;
 
-```
-public void render()
-{
-	ui.noFill();
-	ui.stroke(255);
-	ui.rect(x, y, width, height);
-	ui.textAlign(PApplet.CENTER, PApplet.CENTER);
-	ui.text(text, x + width * 0.5f, y + height * 0.5f);
+public class Thunderstorm {
+    PApplet parent; // Reference to the main sketch
+    boolean isFlashing = false; // Tracks whether a flash is currently happening
+    float flashAlpha = 0; // Alpha value for the flash effect
+    ArrayList<Integer> thunderTimes; // Timestamps for "thunder" in the song
+    int nextThunderIndex = 0; // Index to track the next "thunder" occurrence
+
+    // Constructor
+    Thunderstorm(PApplet parent) {
+        this.parent = parent;
+        initializeThunderTimes();
+    }
+
+    void initializeThunderTimes() {
+        thunderTimes = new ArrayList<Integer>();
+        // Add all your timestamps here in milliseconds (converted from your seconds list)
+        int[] timesInSeconds = {29,33,36,40,44,47,51,54,58,61,70,77,85,92,100,111,161,165,168,171,222,225,229,232,250,254,258,260,265,268,271,275,278};
+        for (int time : timesInSeconds) {
+            thunderTimes.add(time * 1000); // Convert seconds to milliseconds
+        }
+    }
+
+    void update(int currentTime) {
+        // Trigger a flash when the current time matches the next "thunder" time
+        if (!thunderTimes.isEmpty() && currentTime >= thunderTimes.get(nextThunderIndex)) {
+            isFlashing = true;
+            flashAlpha = 255; // Full alpha for a bright flash
+            nextThunderIndex++;
+            if (nextThunderIndex >= thunderTimes.size()) {
+                nextThunderIndex = 0; // Reset the index if we reach the end
+            }
+        }
+
+        // Fade out the flash if it's happening
+        if (isFlashing) {
+            flashAlpha -= 15; // Adjust for faster or slower fade
+            if (flashAlpha <= 0) {
+                isFlashing = false;
+                flashAlpha = 0;
+            }
+        }
+    }
+
+    void display() {
+        // If there's a flash, draw a white rectangle over the screen with the current alpha
+        if (isFlashing) {
+            parent.fill(255, flashAlpha);
+            parent.rect(0, 0, parent.width, parent.height);
+        }
+    }
 }
-```
+
+
+package example;
+
+import processing.core.PApplet;
+import processing.core.PVector;
+
+public class Raindrop {
+    PApplet parent; // Reference to the main sketch
+    PVector position;
+    PVector velocity;
+    
+    public Raindrop(PApplet p) {
+        this.parent = p;
+        position = new PVector(parent.random(parent.width), parent.random(-500, 0), parent.random(-500, 500));
+        velocity = new PVector(parent.random(-1, 1), parent.random(10, 20), 0);
+    }
+    
+    public void update() {
+        position.add(velocity);
+        if (position.y > parent.height) {
+            position.y = parent.random(-200, 0);
+            position.x = parent.random(parent.width);
+            position.z = parent.random(-500, 500);
+        }
+    }
+    
+    public void display() {
+        parent.stroke(200, 200, 255, 150);
+        parent.strokeWeight(2);
+        parent.line(position.x, position.y, position.z, position.x, position.y + 10, position.z);
+    }
+}
+
 
 This is an image using a relative URL:
 ![image](https://github.com/C22374581/MusicVisuals/assets/124157320/c600c05f-0a22-4ef9-a3b4-0fee44da28b0)
@@ -100,7 +167,6 @@ This is an image using a relative URL:
 
 This is a youtube video:
 
-[![YouTube](http://img.youtube.com/vi/J2kHSSFA4NU/0.jpg)](https://www.youtube.com/watch?v=J2kHSSFA4NU)
 
 This is a table:
 
