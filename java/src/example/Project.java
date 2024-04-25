@@ -22,11 +22,7 @@ public class Project extends Visual {
     float zoom = -1260;
     boolean moveLeft = false, moveRight = false, moveUp = false, moveDown = false, zoomIn = false, zoomOut = false;
     boolean isPaused = false;
-    float modStrength = 20; // Earthquake modulation strength
-    boolean regenerateTerrain = true;
-    int earthquakeEffectDuration = 0;
-    final int earthquakePauseDuration = 30;
-    boolean isEarthquakeActive = false; // Flag for earthquake activity
+    boolean showInstructions = true;
 
     final float MAX_CAM_X = 800, MIN_CAM_X = 200, MAX_CAM_Y = 100, MIN_CAM_Y = -500;
     final float MAX_ZOOM = 100, MIN_ZOOM = -1000;
@@ -45,7 +41,7 @@ public class Project extends Visual {
     public void settings() {
         fullScreen(P3D);
         println("CWD: " + System.getProperty("user.dir"));
-        // fullScreen(P3D, SPAN);
+        
 
         // Initialize weather systems
         raindrops = new ArrayList<Raindrop>();
@@ -60,6 +56,7 @@ public class Project extends Visual {
     
 
     public void keyPressed() {
+        showInstructions = false;
         if (key == CODED) {
             switch (keyCode) {
                 case UP:
@@ -163,63 +160,12 @@ public class Project extends Visual {
             particles.add(new Particle(this));
         }
 
-    }
+        // Set text properties for the instruction message
+    textSize(24); // Set the text size
+    fill(255, 255, 255); // Set the text color to white for visibility
+    textAlign(CENTER, CENTER); // Center the text horizontally and vertically
 
-    void drawClover(float x, float y, float size) {
-        fill(0, 128, 0); // Green color for clover
-        noStroke();
-        for (int i = 0; i < 4; i++) {
-            pushMatrix();
-            translate(x, y);
-            rotate(PI / 2 * i);
-            // Draw heart shapes for each leaf of the clover
-            beginShape();
-            vertex(0, -size/4);
-            bezierVertex(-size/4, -size/2, -size/2, -size/4, 0, size/4);
-            bezierVertex(size/2, -size/4, size/4, -size/2, 0, -size/4);
-            endShape(CLOSE);
-            popMatrix();
-        }
-        // Draw stem
-        stroke(0, 128, 0); // Green color for the stem
-        strokeWeight(2);
-        line(x, y + size/4, x, y + size);
     }
-    
-    
-    void drawCelticCross(float x, float y, float size) {
-        fill(218, 165, 32); // Golden color for the cross
-        noStroke();
-        // Vertical part of the cross
-        rect(x - size/8, y - size/2, size/4, size);
-        // Horizontal part of the cross
-        rect(x - size/2, y - size/8, size, size/4);
-        // Circle at the center
-        ellipse(x, y, size/2, size/2);
-    }
-    
-    
-    void drawLandscape() {
-        // Gradient sky from light blue to darker
-        for (int i = 0; i < height / 2; i++) {
-            float inter = map(i, 0, height / 2, 0, 1);
-            int c = lerpColor(color(135, 206, 235), color(25, 25, 112), inter);
-            stroke(c);
-            line(0, i, width, i);
-        }
-        
-        // Green hills
-        fill(34, 139, 34); // Use a green color for the hills
-        noStroke();
-        // Ensure all arguments are float by casting calculations to float where needed
-        arc(width / 2, height, (float)(width * 1.2), (float)(height * 0.8), PI, TWO_PI);
-        arc(width / 4, height, (float)(width * 0.6), (float)(height * 0.5), PI, TWO_PI);
-        arc(width * 3 / 4, height, (float)(width * 0.6), (float)(height * 0.5), PI, TWO_PI);
-    }
-    
-    
-   
-    
 
 // Updated to accept amplitude as an argument
 void generateTerrain(float amplitude) {
@@ -243,9 +189,7 @@ void generateTerrain(float amplitude) {
 
     public void draw() {
 
-
-
-        background(0); // Otherwise, clear the screen with a black background
+    background(0); // Otherwise, clear the screen with a black background
         calculateAverageAmplitude(); // Calculate the average amplitude
         try {
             calculateFFT();
@@ -309,6 +253,13 @@ void generateTerrain(float amplitude) {
                 particles.add(new Particle(this)); // Replace dead particle with a new one
             }
 }
+
+    if (showInstructions) {
+    textSize(24);
+    fill(255, 255, 255);
+    textAlign(CENTER, CENTER);
+    text("Press 'R' for Rain, 'S' for Boxes, 'F' for Stars", width / 2, height - 50);
+    }
 
 
     }
@@ -457,10 +408,6 @@ void drawTerrain3(float amplitude) {
   }
 }
 
-
-
-
-
 // Function to draw shooting star effects in the background
 void drawShootingStars() {
   strokeWeight(1);
@@ -473,11 +420,7 @@ void drawShootingStars() {
     line(startX, startY, endX, endY); // Draw the shooting star
   }
 }
-
-
-
     
- 
     void loadSnowSong() {
         // Ensure there's an audio player available
         if (getAudioPlayer() != null) {
