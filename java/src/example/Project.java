@@ -3,6 +3,7 @@ package example;
 import java.util.ArrayList;
 import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
+import processing.core.PApplet;
 
 public class Project extends Visual {
     float[] coswave;
@@ -36,10 +37,18 @@ public class Project extends Visual {
     ArrayList<Particle> particles;
     Thunderstorm thunderstorm;
     String currentWeather = "bloodmoon"; // Default weather condition
+    Eye e1, e2;
+    int eyeSize = 120;
+    int eyeOffsetX = 80; // Horizontal offset of each eye from the center
+    int mouthWidth = 140;
+    int mouthHeight = 60;
+    int mouthOffsetY = 120; // Vertical offset of the mouth from the center of the eyes
+    
+
 
 
     public void settings() {
-        size(800, 800, P3D);
+        fullScreen(P3D);
         println("CWD: " + System.getProperty("user.dir"));
         // fullScreen(P3D, SPAN);
 
@@ -143,17 +152,23 @@ public class Project extends Visual {
         else loop();
     }
 
+    
     public void setup() {
         coswave = new float[width];
         for (int i = 0; i < width; i++) {
           float amount = map(i, 0, width, 0, PI);
           coswave[i] = abs(cos(amount));
         }
-    
+        super.setup(); // Call setup from the superclass if needed
+        int eyeOffset = 80; // Increase distance between the two eyes for a more exaggerated look
+        int eyeSize = 120; // Size of each eye
+        e1 = new Eye(width / 2 - eyeOffset, height / 2, eyeSize); // Position left eye
+        e2 = new Eye(width / 2 + eyeOffset, height / 2, eyeSize); // Position right eye
+        
         colorMode(HSB);
         setFrameSize(256);
         startMinim();
-        loadAudio("Kodak.mp3");
+        loadAudio("Cudi.mp3");
         getAudioPlayer().play();
         raindrops = new ArrayList<Raindrop>();
         for (int i = 0; i < 500; i++) raindrops.add(new Raindrop(this));
@@ -221,14 +236,7 @@ public class Project extends Visual {
     }
     
     
-    void drawIrishTheme() {
-        float musicAmplitude = getSmoothedAmplitude(); // Assume this is implemented
-        float size = musicAmplitude * 100; // Example scaling based on music
-        
-        drawLandscape(); // Background landscape
-        drawClover(100, height - 100, size); // Example placement
-        drawCelticCross(width - 100, height - 100, size); // Example placement
-    }
+   
     
 
 // Updated to accept amplitude as an argument
@@ -301,7 +309,7 @@ void generateTerrain(float amplitude) {
                 for (Raindrop drop : raindrops) {
                     drop.update();
                     drop.display();
-                    drawTerrain4(amplitude);
+                   drawTerrain4(amplitude);
                     terrainOffset += 0.001;  
                 }
                 break;
@@ -488,6 +496,55 @@ void drawTerrain3(float amplitude) {
   }
 }
 
+
+void drawTerrain4(float amplitude) {
+    background(102);
+    e1.update(mouseX, mouseY);
+    e2.update(mouseX, mouseY);
+
+    e1.display(this);
+    e2.display(this);
+    
+    drawMouth(width / 2, height / 2 + 120, 140, 60); // Move the mouth further down and make it larger
+}
+    
+void drawMouth(int x, int y, int w, int h) {
+    fill(255, 0, 0); // Fill color for the mouth (red)
+    noStroke(); // No border for the mouth
+    arc(x, y, w, h, 0, PI); // Draw a semi-circle for the open mouth
+}
+
+
+
+class Eye {
+    float x, y; // Use float instead of int for smoother movement
+    int size;
+    float angle = 0.0f;
+
+    Eye(int tx, int ty, int ts) {
+        x = tx;
+        y = ty;
+        size = ts;
+    }
+
+    void update(int mx, int my) {
+        angle = atan2(my - y, mx - x);
+    }
+
+    void display(PApplet app) {
+        app.pushMatrix();
+        app.translate(x, y);
+        app.fill(255);
+        app.ellipse(0, 0, size, size);
+        app.rotate(angle);
+        app.fill(153, 204, 0);
+        app.ellipse(size / 4, 0, size / 2, size / 2);
+        app.popMatrix();
+    }
+}
+
+
+
 // Function to draw shooting star effects in the background
 void drawShootingStars() {
   strokeWeight(1);
@@ -533,7 +590,7 @@ void drawShootingStars() {
         if (getAudioPlayer() != null) {
             getAudioPlayer().close(); // Close the current audio player to free resources
         }
-        loadAudio("ThunderStruck.mp3"); // Load the "thunderstruck.mp3" file
+        loadAudio("lsd.mp3"); // Load the "thunderstruck.mp3" file
         getAudioPlayer().play(); // Play the new song
     }
     void loadSnowSong() {
@@ -560,7 +617,7 @@ void drawShootingStars() {
         if (getAudioPlayer() != null) {
             getAudioPlayer().close(); // Close the current audio player to free resources
         }
-        loadAudio("fog.mp3"); // Load the "fog.mp3" file
+        loadAudio("californication.mp3"); // Load the "fog.mp3" file
         getAudioPlayer().play(); // Play the fog song
     }
     
