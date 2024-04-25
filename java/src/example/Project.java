@@ -498,15 +498,58 @@ void drawTerrain3(float amplitude) {
 
 
 void drawTerrain4(float amplitude) {
-    background(102);
+    // Dynamically change the background color based on amplitude
+    float bgColor = map(amplitude, 0, 1, 50, 255);
+    background(bgColor);
+
+    // Update and display entities that might be affected by the mouse position
     e1.update(mouseX, mouseY);
     e2.update(mouseX, mouseY);
-
     e1.display(this);
     e2.display(this);
-    
-    drawMouth(width / 2, height / 2 + 120, 140, 60); // Move the mouth further down and make it larger
+
+    // Draw rotating and scaling pills influenced by amplitude
+    drawDynamicPills(width, height, amplitude);
+
+    // Draw the mouth at a lower position
+    drawMouth(width / 2, height / 2 + 120, 140, 60);
 }
+
+void drawDynamicPills(float width, float height, float amplitude) {
+    int numPills = 50; // Number of pills
+    float angleOffset = amplitude * TWO_PI; // Rotation offset based on amplitude
+
+    for (int i = 0; i < numPills; i++) {
+        float x = random(width);
+        float y = random(height);
+        float baseSize = random(50, 150);
+        float pillWidth = (float) (baseSize * (0.5 + amplitude)); // Width influenced by amplitude
+        float pillHeight = random(20, 50); // Height remains more constant
+
+        // Random color for each pill
+        float r = random(255);
+        float g = random(255);
+        float b = random(255);
+        fill(r, g, b);
+
+        // Emissive glow effect
+        float glowIntensity = amplitude * 50;
+        stroke(r, g, b, 150);
+        strokeWeight(glowIntensity);
+
+        pushMatrix(); // Save the current state of the matrix
+        translate(x + pillWidth / 2, y); // Translate to the pill's center
+        rotate(angleOffset); // Rotate by the calculated offset
+
+        // Draw the pill shape
+        ellipse(0, 0, pillHeight, pillHeight); // Left cap
+        ellipse(pillWidth, 0, pillHeight, pillHeight); // Right cap
+        rect(0, -pillHeight / 2, pillWidth, pillHeight); // Center rectangle
+
+        popMatrix(); // Restore the original state of the matrix
+    }
+}
+
     
 void drawMouth(int x, int y, int w, int h) {
     fill(255, 0, 0); // Fill color for the mouth (red)
