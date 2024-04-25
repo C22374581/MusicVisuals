@@ -3,7 +3,7 @@ package example;
 import java.util.ArrayList;
 import ie.tudublin.Visual;
 import ie.tudublin.VisualException;
-import processing.core.PApplet;
+
 
 public class Project extends Visual {
     float[] coswave;
@@ -37,12 +37,7 @@ public class Project extends Visual {
     ArrayList<Particle> particles;
     Thunderstorm thunderstorm;
     String currentWeather = "bloodmoon"; // Default weather condition
-    Eye e1, e2;
-    int eyeSize = 120;
-    int eyeOffsetX = 80; // Horizontal offset of each eye from the center
-    int mouthWidth = 140;
-    int mouthHeight = 60;
-    int mouthOffsetY = 120; // Vertical offset of the mouth from the center of the eyes
+    
     
 
 
@@ -96,10 +91,7 @@ public class Project extends Visual {
                 case '-':
                     zoomOut = true;
                     break;
-                case 'E':
-                case 'e':
-                    earthquake(mouseX, mouseY, modStrength);
-                    break;
+        
                 case 'r': // Rain
                     currentWeather = "rain";
                     loadRainSong();
@@ -111,10 +103,6 @@ public class Project extends Visual {
                 case 's': // Snow
                     currentWeather = "snow";
                     loadSnowSong();
-                    break;
-                case 't': // Thunderstorm
-                    currentWeather = "thunderstorm";
-                    loadThunderstruckSong();
                     break;
                 case 'C':
                 case 'c': // Reset to default state, which is the blood moon
@@ -159,12 +147,6 @@ public class Project extends Visual {
           float amount = map(i, 0, width, 0, PI);
           coswave[i] = abs(cos(amount));
         }
-        super.setup(); // Call setup from the superclass if needed
-        int eyeOffset = 80; // Increase distance between the two eyes for a more exaggerated look
-        int eyeSize = 120; // Size of each eye
-        e1 = new Eye(width / 2 - eyeOffset, height / 2, eyeSize); // Position left eye
-        e2 = new Eye(width / 2 + eyeOffset, height / 2, eyeSize); // Position right eye
-        
         colorMode(HSB);
         setFrameSize(256);
         startMinim();
@@ -302,17 +284,6 @@ void generateTerrain(float amplitude) {
                 drawTerrain2(amplitude);
                 terrainOffset += 0.001;  
                 break;
-            case "thunderstorm":
-                int songPosition = getSongPosition(); // Fetch the current song position
-                thunderstorm.update(songPosition); // Update thunderstorm with the current song position
-                thunderstorm.display();
-                for (Raindrop drop : raindrops) {
-                    drop.update();
-                    drop.display();
-                   drawTerrain4(amplitude);
-                    terrainOffset += 0.001;  
-                }
-                break;
         }
     
         // Camera and view adjustments based on key inputs
@@ -325,15 +296,6 @@ void generateTerrain(float amplitude) {
         if (zoomIn) zoom += zoomSpeed;
         if (zoomOut) zoom -= zoomSpeed;
     
-  // Increment the terrain offset for continuous terrain movement effect        
-        
-        // Earthquake effect duration handling
-        if (earthquakeEffectDuration > 0) {
-            earthquakeEffectDuration--; // Decrement the earthquake effect duration
-            if (earthquakeEffectDuration <= 0) {
-                regenerateTerrain = true; // Allow terrain regeneration after earthquake effects
-            }
-        }
     
 
 
@@ -345,7 +307,6 @@ void generateTerrain(float amplitude) {
             if (p.isDead()) {
                 particles.remove(i);
                 particles.add(new Particle(this)); // Replace dead particle with a new one
-                drawFog(); // Draw fog when a particle dies
             }
 }
 
@@ -497,94 +458,6 @@ void drawTerrain3(float amplitude) {
 }
 
 
-void drawTerrain4(float amplitude) {
-    // Dynamically change the background color based on amplitude
-    float bgColor = map(amplitude, 0, 1, 50, 255);
-    background(bgColor);
-
-    // Update and display entities that might be affected by the mouse position
-    e1.update(mouseX, mouseY);
-    e2.update(mouseX, mouseY);
-    e1.display(this);
-    e2.display(this);
-
-    // Draw rotating and scaling pills influenced by amplitude
-    drawDynamicPills(width, height, amplitude);
-
-    // Draw the mouth at a lower position
-    drawMouth(width / 2, height / 2 + 120, 140, 60);
-}
-
-void drawDynamicPills(float width, float height, float amplitude) {
-    int numPills = 50; // Number of pills
-    float angleOffset = amplitude * TWO_PI; // Rotation offset based on amplitude
-
-    for (int i = 0; i < numPills; i++) {
-        float x = random(width);
-        float y = random(height);
-        float baseSize = random(50, 150);
-        float pillWidth = (float) (baseSize * (0.5 + amplitude)); // Width influenced by amplitude
-        float pillHeight = random(20, 50); // Height remains more constant
-
-        // Random color for each pill
-        float r = random(255);
-        float g = random(255);
-        float b = random(255);
-        fill(r, g, b);
-
-        // Emissive glow effect
-        float glowIntensity = amplitude * 50;
-        stroke(r, g, b, 150);
-        strokeWeight(glowIntensity);
-
-        pushMatrix(); // Save the current state of the matrix
-        translate(x + pillWidth / 2, y); // Translate to the pill's center
-        rotate(angleOffset); // Rotate by the calculated offset
-
-        // Draw the pill shape
-        ellipse(0, 0, pillHeight, pillHeight); // Left cap
-        ellipse(pillWidth, 0, pillHeight, pillHeight); // Right cap
-        rect(0, -pillHeight / 2, pillWidth, pillHeight); // Center rectangle
-
-        popMatrix(); // Restore the original state of the matrix
-    }
-}
-
-    
-void drawMouth(int x, int y, int w, int h) {
-    fill(255, 0, 0); // Fill color for the mouth (red)
-    noStroke(); // No border for the mouth
-    arc(x, y, w, h, 0, PI); // Draw a semi-circle for the open mouth
-}
-
-
-
-class Eye {
-    float x, y; // Use float instead of int for smoother movement
-    int size;
-    float angle = 0.0f;
-
-    Eye(int tx, int ty, int ts) {
-        x = tx;
-        y = ty;
-        size = ts;
-    }
-
-    void update(int mx, int my) {
-        angle = atan2(my - y, mx - x);
-    }
-
-    void display(PApplet app) {
-        app.pushMatrix();
-        app.translate(x, y);
-        app.fill(255);
-        app.ellipse(0, 0, size, size);
-        app.rotate(angle);
-        app.fill(153, 204, 0);
-        app.ellipse(size / 4, 0, size / 2, size / 2);
-        app.popMatrix();
-    }
-}
 
 
 
@@ -603,39 +476,8 @@ void drawShootingStars() {
 
 
 
-    public void earthquake(int mouseX, int mouseY, float strength) {
-        isEarthquakeActive = true;
-        regenerateTerrain = false;
-        earthquakeEffectDuration = earthquakePauseDuration;
-
-        int gridX = (int)((mouseX - width / 2 - camX + (cols * scl) / 2) / scl);
-        int gridY = (int)((mouseY - height / 2) / scl);
-        for (int x = max(0, gridX - 10); x < min(cols, gridX + 10); x++) {
-            for (int y = max(0, gridY - 10); y < min(rows, gridY + 10); y++) {
-                terrain[x][y] -= strength;
-            }
-        }
-
-        isEarthquakeActive = false;
-    }
-
+    
  
-   
-    void drawFog() {
-        fill(255, 255, 255, 100); // White fog with partial transparency
-        noStroke();
-        rect(0, 0, width, height);
-    }
-    
-    
-    void loadThunderstruckSong() {
-        // Ensure there's an audio player available
-        if (getAudioPlayer() != null) {
-            getAudioPlayer().close(); // Close the current audio player to free resources
-        }
-        loadAudio("lsd.mp3"); // Load the "thunderstruck.mp3" file
-        getAudioPlayer().play(); // Play the new song
-    }
     void loadSnowSong() {
         // Ensure there's an audio player available
         if (getAudioPlayer() != null) {
